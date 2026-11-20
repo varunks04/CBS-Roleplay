@@ -1,0 +1,53 @@
+name: Markdown Link Validation
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-links:
+    name: Verify Markdown Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Relative Markdown Links
+        run: |
+          python -c '
+          import os, re, sys
+          errors = []
+          for root, dirs, files in os.walk("."):
+              for file in files:
+                  if file.endswith(".md"):
+                      filepath = os.path.join(root, file)
+                      with open(filepath, encoding="utf-8") as f:
+                          content = f.read()
+                      links = re.findall(r"\[(?:[^\]]+)\]\(([^)]+)\)", content)
+                      for link in links:
+                          if link.startswith(("http:", "https:", "mailto:", "#")):
+                              continue
+                          clean_link = link.split("#")[0]
+                          if not clean_link or clean_link.startswith("33..126"):
+                              continue
+                          target_path = os.path.normpath(os.path.join(root, clean_link))
+                          if not os.path.exists(target_path):
+                              errors.append((filepath, link, target_path))
+          if errors:
+              print(f"FAILED: Found {len(errors)} broken relative links:")
+              for src, link, target in errors:
+                  print(f"  In {src}: {link} -> {target}")
+              sys.exit(1)
+          else:
+              print("SUCCESS: 100% of relative markdown links are valid!")
+          '
