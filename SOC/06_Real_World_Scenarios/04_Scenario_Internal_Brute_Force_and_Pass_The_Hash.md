@@ -4,12 +4,57 @@
 
 ---
 
-### 1. Detection Mechanics
-An internal workstation generates 4,000 Event ID 4625 (Logon Failure) events against 50 different servers on port 445 within 3 minutes, followed by an Event ID 4624 (Logon Type 3: Network) using NTLM authentication.
+### 1. Alert Context & Initial Detection
+At 03:14 AM on a Sunday, the SIEM triggers a High-Severity incident:
+`Mass Windows Logon Failures followed by Successful NTLM Authentication across Multiple Internal Servers`
+- **Source Host**: `WS-HR-104` (Internal IP: `10.10.4.52`)
+- **Target Hosts**: 45 internal servers across subnet `10.10.10.0/24`
+- **Event ID**: 4,200 instances of Event ID 4625 within 4 minutes, followed by successful Event ID 4624 (Logon Type 3: Network) on `FILESRV-01` and `SQLPROD-02`.
 
-### 2. Technical Mechanism: Pass-the-Hash (MITRE T1550.002)
-The attacker dumped the local SAM database on a compromised workstation using Mimikatz, extracting the NTLM hash of a local administrator. Because the enterprise reused the exact same local administrator password across all workstations, the attacker uses the stolen hash directly to authenticate across the entire network without needing the plain-text password.
+---
 
-### 3. Remediation & Enterprise Hardening
-1. Deploy **Microsoft LAPS (Local Administrator Password Solution)**: Automatically generates unique, random, 24-character passwords for every workstation's local admin account and rotates them in Active Directory.
-2. Disable NTLM authentication across the domain in favor of Kerberos.
+### 2. Technical Mechanism: Pass-the-Hash (MITRE ATT&CK T1550.002)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Attacker
+    participant WS as Compromised Workstation (WS-HR-104)
+    participant LSASS as lsass.exe Memory
+    participant Target as File Server (FILESRV-01)
+
+    Attacker->>WS: 1. Achieves local admin execution
+    WS->>LSASS: 2. Dumps memory with Mimikatz: sekurlsa::logonpasswords
+    LSASS-->>WS: 3. Extracts NTLM Hash of Local Administrator (31d6cfe0d16ae931...)
+    Note over WS: Enterprise re-uses identical local admin password on all PCs!
+    WS->>Target: 4. SMB connection (TCP 445) presenting stolen NTLM Hash
+    Target->>Target: 5. Validates NTLM challenge against local SAM database
+    Target-->>WS: 6. Access Granted! Attacker is now Administrator on FILESRV-01!
+```
+
+---
+
+### 3. Forensic Investigation Queries
+
+#### KQL Query in Microsoft Sentinel:
+```kql
+// Trace lateral movement logins originating from the compromised host
+SecurityEvent
+| where TimeGenerated > ago(6h)
+| where IpAddress == "10.10.4.52"
+| where EventID in (4624, 4625)
+| project TimeGenerated, Computer, TargetUserName, EventID, LogonType, AuthenticationPackageName
+| order by TimeGenerated asc
+```
+
+---
+
+### 4. Remediation and Enterprise Hardening
+
+1. **Immediate Host Isolation**: Isolate `WS-HR-104` via EDR to sever active lateral movement channels.
+2. **Deploy Microsoft LAPS (Local Administrator Password Solution)**:
+   - Eliminates static shared passwords.
+   - Automatically generates a unique, cryptographically random 24-character password for every machine's local administrator account.
+   - Rotates passwords automatically in Active Directory.
+3. **Restructure Firewall Network Segmentation**:
+   - Enforce host-based firewall rules blocking all inbound SMB (TCP 445) and RDP (TCP 3389) traffic **between workstations**. Workstations should never communicate directly with other workstations.

