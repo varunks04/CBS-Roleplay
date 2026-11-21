@@ -34,6 +34,7 @@ flowchart TD
 | **Governance & IGA** | [03. SailPoint](./03_SailPoint_IdentityIQ_and_IdentityNow.md) | Role mining, compliance audits, access certifications, and JML automation | Fired employees retain access for months; companies fail federal SOX audits. |
 | **Human PAM** | [04. CyberArk PAS](./04_CyberArk_Privileged_Access_Security.md) | Vaulting admin passwords, recording privileged sessions, and JIT elevation | Shared `root`/`admin` passwords on sticky notes; zero audit accountability. |
 | **Machine Secrets PAM** | [05. HashiCorp Vault](./05_HashiCorp_Vault_for_Secrets.md) | Dynamic database credentials, API key brokering, and secret encryption | Plaintext database passwords committed to public GitHub repositories. |
+| **IAM Automation** | [06. PowerShell & Graph API](./06_IAM_Automation_with_PowerShell_and_Graph_API.md) | Automating bulk user provisioning, emergency session kill-switch, stale audits | Manual clicking for 10,000 users; impossible to meet emergency incident SLAs. |
 
 ---
 

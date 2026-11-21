@@ -29,6 +29,7 @@ flowchart TD
 | [05. Privileged Access Management (PAM)](./05_Privileged_Access_Management_PAM.md) | Securing Domain Admins, root passwords, and cloud keys | The bank manager's vault and dual-custody safety deposit box |
 | [06. Identity Governance & Administration (IGA)](./06_Identity_Governance_and_Administration_IGA.md) | Compliance audits, access certifications, and policy enforcement | The City Hall property deed records and annual property tax audit |
 | [07. Service Accounts and Machine Identities](./07_Service_Accounts_and_Machine_Identities.md) | Securing APIs, automation scripts, bots, and workloads | Automated robotic delivery carts roaming warehouse floors |
+| [08. Password Policies, SSPR & Defense](./08_Password_Policies_SSPR_and_Credential_Defense.md) | NIST 800-63B standards, Self-Service Password Reset & Smart Lockout | Replacing fragile padlock keys with automated self-service keycards |
 
 ---
 
