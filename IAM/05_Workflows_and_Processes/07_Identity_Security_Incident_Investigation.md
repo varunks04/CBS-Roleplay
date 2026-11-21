@@ -4,7 +4,30 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+- **ATO (Account Takeover)**: When a hacker successfully logs into a legitimate employee's account using stolen credentials or hijacked session cookies.
+- **Impossible Travel**: An automated alert that fires when an account signs in from London at 1:00 PM and from Tokyo at 1:30 PM (physically impossible speed).
+- **Session Revocation**: A command sent to the cloud IdP that immediately invalidates all active browser cookies and refresh tokens, instantly logging out the attacker.
+- **KQL (Kusto Query Language)**: The search language used in Microsoft Sentinel and Defender to search through billions of login records in seconds.
+- **Inbox Forwarding Rule**: A stealthy trick attackers use where they set up a secret rule in the victim's email: *"Forward all emails containing 'invoice' or 'password' to my external Gmail address"*.
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. Microsoft Entra ID triggers a High-Risk Alert: *"Impossible Travel detected for user: cfo@contoso.com"*.
+2. The security analyst queries the sign-in logs and discovers the CFO logged in from Chicago at 9:00 AM, and an IP address in Nigeria logged in at 9:25 AM.
+3. The analyst calls the CFO on their cell phone: *"Are you currently in Nigeria?"* The CFO answers: *"No, I'm sitting in my Chicago office."*
+4. **Immediate Emergency Response**:
+   - The analyst executes `Revoke-MgUserSignInsSession`, instantly booting the hacker off the CFO's account.
+   - The analyst resets the password and temporarily disables the account.
+5. The analyst checks what the hacker did during the 20 minutes they were inside:
+   - Did the hacker add a new phone number to MFA?
+   - Did the hacker set up email forwarding rules?
+6. The analyst purges the hacker's forwarding rules, re-enables the account, and issues the CFO a Temporary Access Pass (TAP) to register a new FIDO2 YubiKey.
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -19,7 +42,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - An automated identity risk alert (e.g., Entra ID Identity Protection alert: *Atypical Travel*, *Leaked Credentials*, or *Anomalous Token Generation*), or a user report of unauthorized MFA push notifications.

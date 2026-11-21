@@ -4,9 +4,18 @@
 
 ---
 
+### 🎓 Beginner's Compass: Decoded Terms in This File
+- **RBAC (Role-Based Access Control)**: Access granted based on broad job roles (e.g., "Doctor", "Teller", "Developer").
+- **ABAC (Attribute-Based Access Control)**: Access granted based on dynamic attributes (who you are, what device you use, where you are, what time it is).
+- **PBAC (Policy-Based Access Control)**: A modern framework that writes access policies as software code combining RBAC and ABAC.
+- **Role Explosion**: The disastrous situation where an enterprise creates thousands of confusing, overlapping security groups for every minor permission combination.
+- **OPA (Open Policy Agent)**: An open-source policy engine that evaluates authorization rules using a declarative code language called Rego.
+
+---
+
 ### 1. Conceptual Breakdown
 
-How does a system decide whether an authenticated user is permitted to view, edit, or delete a specific file, server, or customer record? In enterprise IAM, this is determined by the **Access Control Model**.
+How does a computer decide whether an authenticated user is permitted to view, edit, or delete a specific file, server, or customer record? In enterprise IAM, this is determined by the **Access Control Model**.
 
 The two primary architectures are:
 - **RBAC (Role-Based Access Control)**: Permissions are assigned to broad roles, and roles are assigned to users.

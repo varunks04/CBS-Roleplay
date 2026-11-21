@@ -4,7 +4,27 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+- **Privilege Creep**: When Bob transfers from Customer Service to Software Engineering, but IT forgets to delete his Customer Service access. Over 5 years, Bob accumulates 50 permissions he doesn't need!
+- **SoD (Separation of Duties)**: The accounting rule stating that the person who enters an invoice cannot be the person who wires the money to pay it.
+- **Toxic Combination**: Two permissions that, when held by the same person, allow them to steal money or sabotage systems without anyone noticing.
+- **Grace Period**: A temporary window (usually 7 days) where an employee keeps their old access while training their replacement.
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. Bob works in Customer Support. He applies for an internal job and gets promoted to Junior Software Developer.
+2. HR updates Bob's department in Workday from "Customer Support" to "Software Engineering".
+3. SailPoint (the IGA brain) detects the change and compares:
+   - *What does a Developer need?* GitHub, AWS Dev Console, Docker repos.
+   - *What does Customer Support need?* Zendesk, Customer Call Records.
+4. SailPoint automatically checks for **Toxic Combinations**: Does Bob have permissions that violate compliance rules?
+5. SailPoint grants Bob his new Developer access, and sets a 7-day timer.
+6. When the 7-day timer hits zero, SailPoint automatically strips Bob's Zendesk access, preventing privilege creep!
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -20,7 +40,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - An internal transfer event in Workday (e.g., employee moves from "Customer Support" to "Software Development", or is promoted to a people manager).

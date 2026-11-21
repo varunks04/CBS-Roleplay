@@ -2,6 +2,11 @@
 
 Welcome to the **Enterprise Identity and Access Management (IAM)** learning path. This curriculum transforms beginners into enterprise-ready IAM Engineers, Directory Architects, and Identity Governance Specialists.
 
+> [!TIP]
+> 🌟 **NEW TO IAM? START HERE FIRST!**  
+> If you are overwhelmed by the acronyms and tools (MDR, SIEM, EDR, IdP, SP, SSO, MFA, IGA, PAM, PIM, SCIM, SAML, OIDC, CyberArk, SailPoint, Okta, Entra ID), check out our plain-English guide:  
+> 👉 **[00. IAM Beginner's Glossary & Acronym Decoder](./01_Fundamentals/00_IAM_Beginners_Glossary_and_Acronym_Decoder.md)** — Every security term decoded with everyday real-world analogies (airports, Disney MagicBands, valet keys, and bank vaults)!
+
 ---
 
 ## 📌 Track Overview

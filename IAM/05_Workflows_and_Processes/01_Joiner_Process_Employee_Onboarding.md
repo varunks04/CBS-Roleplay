@@ -4,7 +4,28 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+Before reading the technical SOP, understand what each tool is doing in this process:
+- **Workday (HRIS)**: The HR software where the recruiter enters the candidate's legal name, start date, and job title. This is the **Trigger**.
+- **SailPoint (IGA)**: The identity robot that notices the new person in Workday, creates their account, and decides which Slack channels and email groups they need.
+- **Microsoft Entra ID**: The cloud directory where the user's primary login account (`name@company.com`) is created.
+- **SCIM (System for Cross-domain Identity Management)**: The automated API pipe connecting Entra ID to third-party tools like Zoom and Slack so accounts are created automatically.
+- **TAP (Temporary Access Pass)**: An 8-character time-limited code sent to the manager so the new employee can sign in on Day 1 without ever needing a temporary password.
+- **FIDO2**: The unphishable security key (like a YubiKey or fingerprint) the employee registers on their first morning.
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. HR hires Alice as a Financial Analyst starting next Monday.
+2. The HR software (Workday) syncs with the identity platform (SailPoint).
+3. SailPoint automatically creates Alice's login account (`alice.smith@company.com`) in Active Directory and Entra ID.
+4. SailPoint automatically assigns "Birthright Access": gives her a company email, adds her to the `#finance` Slack channel, and licenses her Microsoft 365.
+5. On Monday morning, Alice arrives. Her manager gives her a Temporary Access Pass (TAP).
+6. Alice turns on her laptop, types the TAP, and the computer prompts her to tap her YubiKey or scan her fingerprint. Her account is fully operational in 10 minutes with zero IT Helpdesk tickets!
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -21,7 +42,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - An HR Business Partner marks a new candidate record as "Ready for Hire" or "Hired" in the authoritative HRIS (e.g., Workday, SAP SuccessFactors) with an effective start date $\le 7$ days in the future.

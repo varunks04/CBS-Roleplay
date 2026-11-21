@@ -4,7 +4,26 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+- **Self-Service Access Portal**: An internal web catalog (like an Amazon shopping cart for software) where employees can search for software or database roles they need.
+- **Entitlement**: The specific permission or group inside an application (e.g., "Salesforce Billing Manager", "AWS ReadOnlyAccess", "Marketing Shared Drive Write").
+- **Multi-Tier Approval**: Requiring more than one person to approve access (e.g., your Direct Manager approves your need, AND the Financial Data Owner approves that you can see sensitive accounting numbers).
+- **Time-Bound Access**: Granting permission with an automatic expiration timer (e.g., access automatically vanishes after 90 days unless renewed).
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. Charlie is an engineer who needs temporary access to the production customer database to fix a bug.
+2. Charlie opens the company's ServiceNow or SailPoint web portal, finds "Production Database Read-Only", types his justification (*"Troubleshooting Ticket #9482"*), and clicks **Submit**.
+3. The system checks if Charlie already has this access, or if this violates company policies.
+4. Charlie's manager gets a prompt on Microsoft Teams and taps **Approve**.
+5. The Database Owner gets an email and taps **Approve**.
+6. The identity engine automatically adds Charlie to the database group and starts a **90-day countdown timer**.
+7. In 90 days, Charlie's access automatically expires without anyone having to remember to delete it!
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -25,7 +44,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - An employee requires access to a specialized software application, network share, or database entitlement beyond their automatic birthright permissions.

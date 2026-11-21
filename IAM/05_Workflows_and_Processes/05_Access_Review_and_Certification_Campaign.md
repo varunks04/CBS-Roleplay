@@ -4,7 +4,26 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+- **Access Certification / Access Review**: A periodic compliance audit where managers must inspect every permission their direct reports hold and click "Approve" or "Revoke".
+- **SOX (Sarbanes-Oxley Act)**: A federal US law passed after the Enron scandal requiring public corporations to prove to independent auditors that their financial computer systems cannot be tampered with.
+- **Audit Finding**: When an external auditor discovers an ex-employee or unapproved person has access to company data, resulting in compliance penalties.
+- **Certification Campaign**: The automated project launched in SailPoint that generates review checklists for 500 managers across the company simultaneously.
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. Every 90 days, the compliance calendar triggers an automated audit campaign.
+2. SailPoint sends an email to every manager: *"Please review the permissions of your 8 direct reports"*.
+3. The manager logs into the portal and sees a checklist:
+   - *"Alice Smith has SAP Accounting Access. Has not logged in for 120 days. Keep or Revoke?"*
+4. The manager clicks **Revoke**.
+5. SailPoint immediately executes automated API scripts that delete Alice from the SAP security group.
+6. The system stamps a cryptographic digital signature on the audit log so when external auditors (like PwC or EY) arrive, the company passes with zero manual paperwork!
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -21,7 +40,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - A scheduled compliance trigger established by the Governance, Risk, and Compliance (GRC) team (typically every 90 days for SOX in-scope systems, and annually for all general systems).

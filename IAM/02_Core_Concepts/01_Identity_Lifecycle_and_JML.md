@@ -4,6 +4,16 @@
 
 ---
 
+### 🎓 Beginner's Compass: Decoded Terms in This File
+- **JML (Joiner, Mover, Leaver)**: The HR and IT business processes for onboarding, job transfers, and offboarding.
+- **HRIS (Human Resources Information System)**: The authoritative system where employees are hired and terminated (e.g., Workday, SAP SuccessFactors).
+- **Birthright Access**: The baseline set of software and permissions every employee in a department gets automatically on Day 1 (e.g., corporate email, Slack/Teams, intranet, company calendar).
+- **Privilege Creep**: The dangerous accumulation of unneeded permissions when an employee switches jobs inside a company over 5 years and old access is never removed.
+- **Deprovisioning**: The automated or manual process of disabling accounts, revoking access tokens, and reclaiming software licenses when someone departs.
+- **CAE (Continuous Access Evaluation)**: Real-time token revocation that kicks a terminated user out of active email/chat sessions in seconds.
+
+---
+
 ### 1. Definition and Purpose
 
 **Identity Lifecycle Management (ILM)** refers to the automated, continuous governance of a user's digital identity and access entitlements from their initial hire date until their permanent separation from the enterprise.
@@ -13,7 +23,7 @@ The backbone of ILM in any mature organization is the **JML Process**:
 - **Mover**: Handling internal promotions, department transfers, or temporary assignments by granting new permissions and revoking old, unneeded entitlements.
 - **Leaver**: Immediate, deterministic deprovisioning of all accounts, tokens, and access rights upon resignation, termination, or contract end.
 
-> 💡 **Analogy**: Consider a hotel guest's room keycard:
+> 💡 **Analogy**: The Hotel Guest Room Keycard
 > - **Joiner**: When you check in at the front desk, they verify your reservation and give you a keycard coded for your room and the gym.
 > - **Mover**: If you upgrade to the penthouse on day two, the front desk updates your keycard so it opens the penthouse and executive lounge, while simultaneously disabling access to your previous standard room.
 > - **Leaver**: When checkout time arrives at 11:00 AM, the keycard is instantly deactivated. You cannot wander back into the room after you depart.
@@ -24,7 +34,7 @@ The backbone of ILM in any mature organization is the **JML Process**:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PreHire: Candidate Signs Offer
+    [*] --> PreHire: Candidate Signs Offer in Workday
     PreHire --> Active_Joiner: Day 1 Arrival (Account Provisioned)
     Active_Joiner --> Active_Mover: Promotion / Department Transfer
     Active_Mover --> Active_Joiner: Entitlements Adjusted (Old Access Revoked)
@@ -43,7 +53,7 @@ stateDiagram-v2
 #### Phase 1: Joiner (Birthright Provisioning)
 - **Authoritative Source**: HR records created in Workday with Start Date, Department, Job Title, Manager, and Cost Center.
 - **Mechanism**:
-  1. IGA platform detects new record via daily delta sync or real-time webhook.
+  1. IGA platform (SailPoint) detects new record via daily delta sync or real-time webhook.
   2. Generates immutable unique identifier (e.g., `EmployeeNumber: 849201`).
   3. Provisions core corporate account in Primary Identity Provider (Entra ID / Active Directory).
   4. Automatically assigns **Birthright Roles**: corporate email (Exchange Online), corporate chat (Slack/Teams), intranet, and general HR self-service portal.

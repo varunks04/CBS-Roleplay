@@ -4,7 +4,27 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+- **JIT (Just-In-Time Access)**: The security practice of having ZERO administrative access until the exact moment you need to perform an approved task, which expires automatically in 2 hours.
+- **Standing Privileges**: The dangerous legacy practice of giving engineers permanent administrator passwords 24/7.
+- **Entra PIM (Privileged Identity Management)**: Microsoft's cloud PAM tool that lets users temporarily activate administrator roles.
+- **CyberArk PSM (Privileged Session Manager)**: An isolated jump-host proxy that injects vaulted root passwords without the human engineer ever seeing the password, while recording video and keystrokes.
+- **Break-Glass Account**: An emergency cloud account kept in a physical safe for catastrophic disaster recovery when all regular login systems are down.
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. David is a cloud engineer. 99% of the day, his account has ordinary user permissions (cannot delete servers or modify network firewalls).
+2. A production server crashes at 2:00 PM. A ServiceNow change ticket is opened: `CHG0098412`.
+3. David opens Microsoft Entra PIM or CyberArk, selects `Azure Contributor`, pastes the ticket number, and taps his YubiKey hardware token.
+4. His team lead's phone buzzes with a prompt and taps **Approve**.
+5. PIM temporarily elevates David to Administrator for **exactly 2 hours**.
+6. David restarts the crashed server.
+7. At 4:00 PM, the timer expires and PIM automatically strips the administrator role. Even if David's laptop is stolen at 5:00 PM, the attacker has zero administrative access!
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -23,7 +43,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - An engineer needs to perform an administrative action requiring elevated privileges (e.g., restarting a production database, modifying cloud routing tables, or rotating root certificates).

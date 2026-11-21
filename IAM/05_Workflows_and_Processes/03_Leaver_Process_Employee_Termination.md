@@ -4,7 +4,28 @@
 
 ---
 
-### 1. Workflow Architecture Diagram
+### 🎓 Beginner's Compass: Decoded Tools in This Workflow
+- **Deprovisioning**: The systematic shutting down of an employee's accounts, security tokens, and passwords.
+- **CAE (Continuous Access Evaluation)**: The real-time technology that kills an active web session (like Outlook or Slack) in under 30 seconds rather than waiting for tokens to expire.
+- **Intune MDM (Mobile Device Management)**: The software that lets company administrators remotely wipe corporate emails and data from a departing employee's smartphone or laptop.
+- **Legal Hold**: A mandatory instruction from corporate attorneys requiring IT to freeze and save all emails and documents of an employee involved in a lawsuit, preventing automated deletion.
+- **Shared Mailbox**: Converting an ex-employee's mailbox so their manager can read incoming customer emails without paying for a license.
+
+---
+
+### 1. Plain-English Walkthrough: What Actually Happens
+1. An employee resigns or is terminated. HR enters the termination timestamp into Workday.
+2. The identity system triggers the **Leaver Workflow**:
+   - **Step 1 (First 60 seconds)**: Instantly revoke all active browser sessions and OAuth tokens. Even if the employee is currently typing an email, their screen flashes "Session Expired" and locks them out.
+   - **Step 2**: The account is disabled in Active Directory and Microsoft Entra ID. Password is scrambled to a random 64-character unrecorded value.
+   - **Step 3**: A signal is sent to the physical security system (badging desk) to deactivate their RFID office door badge.
+   - **Step 4**: Company mobile devices are remotely wiped of corporate data via Intune.
+   - **Step 5**: SCIM pushes deprovisioning API calls to Salesforce, Slack, GitHub, and Zoom to delete their seats, saving the company money.
+   - **Step 6**: The mailbox is converted to a free Shared Mailbox and delegated to their manager for 30 days.
+
+---
+
+### 2. Workflow Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -23,7 +44,7 @@ flowchart TD
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 3. Standard 8-Point Operational Breakdown
 
 #### 1. Trigger
 - An HR Business Partner marks an employee as terminated in Workday.
