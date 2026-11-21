@@ -15,7 +15,7 @@ Traditional cybersecurity courses often isolate theory from real-world enterpris
 This repository bridges that gap. Built from the perspective of a Senior Cybersecurity Professional, Technical Mentor, and Enterprise Architect, this repository serves as a **single, exhaustive, battle-tested learning path** designed to take you from foundational understanding to enterprise-ready proficiency across the three most critical defense pillars of modern IT security:
 
 1. **[IAM (Identity and Access Management)](./IAM/README.md)**: Controlling *who* has access to *what*, enforcing least privilege, securing privileged accounts, and governing modern multi-cloud identity perimeters. *(New to IAM? Check out the [Beginner's Glossary & Acronym Decoder](./IAM/01_Fundamentals/00_IAM_Beginners_Glossary_and_Acronym_Decoder.md)!)*
-2. **[SOC (Security Operations Center)](./SOC/README.md)**: Monitoring corporate environments 24/7/365, triaging security telemetry, hunting threats, analyzing malware and phishing, and executing rapid incident response.
+2. **[SOC (Security Operations Center)](./SOC/README.md)**: Monitoring corporate environments 24/7/365, triaging security telemetry, hunting threats, analyzing malware and phishing, and executing rapid incident response. *(New to SOC? Check out the [SOC Beginner's Glossary & Acronym Decoder](./SOC/01_Fundamentals/00_SOC_Beginners_Glossary_and_Acronym_Decoder.md)!)*
 3. **[DevSecOps (Development, Security, and Operations)](./DevSecOps/README.md)**: Embedding automated security checks into the software development lifecycle (SSDLC), securing container orchestration, managing secrets, and automating Infrastructure as Code (IaC) compliance.
 
 ---

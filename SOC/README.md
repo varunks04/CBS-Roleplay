@@ -2,6 +2,11 @@
 
 Welcome to the **Security Operations Center (SOC)** practitioner's curriculum. This track trains you in real-time threat detection, alert triage, log forensics, incident containment, and cyber threat hunting.
 
+> [!TIP]
+> 🌟 **NEW TO SOC? START HERE FIRST!**  
+> If you are overwhelmed by the terminology (SIEM, SOAR, EDR, XDR, MDR, IDS, IPS, IOC, IOA, TTP, MITRE ATT&CK, PCAP, CVE, CVSS, DFIR, MTTD, MTTR), read our plain-English guide:  
+> 👉 **[00. SOC Beginner's Glossary & Acronym Decoder](./01_Fundamentals/00_SOC_Beginners_Glossary_and_Acronym_Decoder.md)** — Every security concept decoded with everyday real-world analogies (hospital emergency rooms, fire departments, and air traffic control towers)!
+
 ---
 
 ## 📌 Track Overview

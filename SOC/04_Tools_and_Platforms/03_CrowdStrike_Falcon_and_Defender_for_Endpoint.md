@@ -1,92 +1,84 @@
-# 03. CrowdStrike Falcon and Microsoft Defender for Endpoint (MDE) Deep Dive
+# 03. CrowdStrike Falcon and Microsoft Defender for Endpoint
 
-[⬅️ Prev: Splunk](./02_Splunk_Enterprise_Security_and_SPL.md) | [Back to Tools](./README.md) | [Next: Wireshark & Forensics ➡️](./04_Wireshark_and_Network_Forensics.md)
+[⬅️ Prev: Splunk Enterprise Security](./02_Splunk_Enterprise_Security_and_SPL.md) | [Back to Tools Track](./README.md) | [Next: Wireshark and Network Forensics ➡️](./04_Wireshark_and_Network_Forensics.md)
 
 ---
 
-### 1. Platform Overview & Architecture
+### 🎓 Beginner's Compass: Decoded Acronyms & Terms
+- **CrowdStrike Falcon**: The market-leading cloud-native EDR platform that uses a single lightweight kernel agent and the proprietary "Threat Graph" to stop breaches.
+- **Microsoft Defender for Endpoint (MDE)**: Microsoft's enterprise EDR built directly into Windows 10/11 and Windows Server (no extra agent installation required on modern Windows).
+- **Process Lineage (Tree)**: The chronological visualization of which parent application spawned which child process.
+- **RTR (Real-Time Response) / Live Response**: A remote terminal session embedded in the EDR console that gives the SOC analyst interactive shell access to a machine over an encrypted cloud tunnel.
+- **AIR (Automated Investigation & Remediation)**: Microsoft's AI engine that automatically hunts for related artifacts across thousands of endpoints and quarantines malware without human intervention.
 
-**CrowdStrike Falcon** and **Microsoft Defender for Endpoint (MDE)** are the two dominant enterprise **Endpoint Detection and Response (EDR / XDR)** platforms.
+---
 
-Unlike legacy antivirus that relies on static file signatures, modern EDR sensors operate at **Ring 0 (OS Kernel level)** using kernel drivers on Windows or **eBPF** on Linux:
-- They continuously record process creations, DLL loads, registry modifications, network sockets, and memory allocations.
-- They evaluate behavioral heuristics in real time to intercept attacks *as they happen*.
+### 1. Side-by-Side Comparison: Falcon vs. Defender for Endpoint
+
+| Feature | CrowdStrike Falcon | Microsoft Defender for Endpoint (MDE) |
+| :--- | :--- | :--- |
+| **Agent Architecture** | Single lightweight kernel sensor (Falcon Sensor) | Built directly into Windows OS kernel; separate agent for Linux/Mac |
+| **Cloud Brain** | CrowdStrike Threat Graph | Microsoft Security Graph & Defender XDR |
+| **Remote Shell Tool** | **Real-Time Response (RTR)** | **Live Response** |
+| **Automated Remediation** | Falcon Fusion Workflows | Automated Investigation and Remediation (AIR) |
+| **Host Containment** | Network Containment (One-click) | Isolate Device (One-click, allows Outlook/Teams option) |
+| **Primary Query Language** | Falcon LogScale / CQL | Kusto Query Language (KQL) |
+
+---
+
+### 2. How to Triage an Alert Inside an EDR Console
+
+When an alert appears on your screen:
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Attacker
-    participant OS as Windows Kernel (Ring 0)
-    participant EDR as EDR Sensor (Kernel Driver)
-    participant Cloud as EDR Cloud Analytics Engine
-    participant Console as SOC Analyst Console
-
-    Attacker->>OS: 1. Injects shellcode into explorer.exe (T1055)
-    OS->>EDR: 2. Kernel callback intercept: VirtualAllocEx / WriteProcessMemory
-    EDR->>EDR: 3. Heuristic match: Cross-process memory injection detected!
-    EDR-->>OS: 4. Immediate Action: Terminates malicious thread instantly!
-    EDR->>Cloud: 5. Transmits detailed event graph telemetry
-    Cloud->>Cloud: 6. Correlates with MITRE ATT&CK T1055 (Process Injection)
-    Cloud->>Console: 7. Generates Sev-1 Incident: "Process Injection Prevented"
+flowchart TD
+    Alert["1. Alert Fired: 'Suspicious Script Execution' "] --> Tree["2. Inspect Process Lineage<br/>Look at Parent PID -> Child PID relationship"]
+    Tree --> Cmd["3. Examine Command-Line Arguments<br/>Was the command hidden (-w hidden)? Base64 encoded?"]
+    Cmd --> Hash["4. Check Binary Hash & Signature<br/>Is it signed by Microsoft? Or unsigned from %TEMP%?"]
+    Hash --> Actions{Is it malicious?}
+    Actions -->|Yes| Contain["5. Action: Contain Host Immediately<br/>Sever network access to stop lateral movement"]
+    Contain --> Shell["6. Action: Open RTR / Live Response<br/>Kill process, dump memory, delete persistence files"]
+    Actions -->|No| Tune["Mark as False Positive & Tune Alert Rule"]
 ```
 
 ---
 
-### 2. Live Response Console Commands
+### 3. Essential Real-Time Response (RTR) Commands
 
-When an analyst isolates an endpoint, they interact with the victim host remotely via the EDR **Live Response Shell**:
+When an analyst connects to a live compromised host via RTR/Live Response:
 
-#### CrowdStrike Falcon Real-Time Response (RTR) Commands:
 ```bash
-# 1. View running processes and identify suspicious PID
+# 1. View all running processes on the host
 ps
 
-# 2. Kill malicious process by PID immediately
-kill -PID 5824
+# 2. Kill the malicious process by Process ID
+kill -pid 4092
 
-# 3. View active network connections from host
+# 3. View established network connections
 netstat
 
-# 4. Dump memory of a specific process for forensic offline analysis
-memdump -Target="lsass.exe" -Destination="C:\Temp\lsass.dmp"
+# 4. Remove malicious persistence binary from disk
+rm "C:\Users\Public\backdoor.exe"
 
-# 5. Extract a dropped malware file to the analyst workstation safely
-get "C:\Users\victim\AppData\Local\Temp\malware.exe"
+# 5. Extract a forensic memory dump of a specific suspicious process
+memdump 4092 "C:\Forensics\suspicious_process.dmp"
 
-# 6. Delete a persistence registry key
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" -Value "Updater"
-```
-
-#### Microsoft Defender for Endpoint (MDE) Live Response Commands:
-```powershell
-# 1. Isolate the machine from the corporate network
-isolate device
-
-# 2. Collect comprehensive forensic investigation package
-collect investigation package
-
-# 3. Run automated remediation script from cloud library
-run script -ScriptName "Check-Persistence-RegKeys.ps1"
-
-# 4. Stop and quarantine a malicious process and binary
-remediate -File "C:\ProgramData\payload.exe"
+# 6. Retrieve a file from the host back to your SOC workstation for malware analysis
+get "C:\Windows\Temp\payload.dll"
 ```
 
 ---
 
-### 3. Reading the EDR Process Lineage Tree
+### 4. Common Beginner Mistakes vs. Best Practices
 
-During triage, an analyst reads the **Process Execution Tree** to understand the root cause:
+| Common Beginner Mistake | Real-World Risk | Industry Best Practice |
+| :--- | :--- | :--- |
+| **Un-containing a host too early** | Lifting network isolation before verifying that all persistence mechanisms (registry, scheduled tasks) are purged allows the attacker to resume operations. | Keep the host contained until full **post-remediation forensic verification** is completed. |
+| **Running remediation commands locally on the physical machine** | Walking over to the physical laptop and typing on the keyboard triggers anti-forensic wiper scripts configured by the attacker. | Execute all containment, memory acquisition, and artifact gathering remotely through **isolated EDR Live Response**. |
+| **Ignoring Duplicate Detections** | Treating 5 detections on 5 machines as separate tickets blinds you to a coordinated enterprise-wide campaign. | Correlate alerts by **File Hash**, **Parent Process**, and **External C2 IP** to scope the full infection campaign. |
 
-```text
-[Lineage Tree Triage Example]
-├─► explorer.exe (PID: 2840) [User Desktop]
-│    └─► outlook.exe (PID: 3912) [User opened Outlook]
-│         └─► winword.exe (PID: 5410) [Opened "Invoice.docm"]
-│              └─► 🚨 cmd.exe (PID: 6012) [VBA Macro spawned Command Prompt!]
-│                   └─► 🚨 powershell.exe (PID: 6180) -nop -w hidden -enc aWV4I...
-│                        └─► conhost.exe (PID: 6184)
-│                        └─► 🚨 whoami.exe (PID: 7100) [Reconnaissance]
-```
+---
 
-**Analyst Diagnosis**: The user received a spear-phishing email in Outlook, opened a malicious macro-enabled Word document, and the macro spawned PowerShell to download a remote backdoor. Immediate containment required!
+### 5. Recommended Next Steps
+Learn how network packets are reconstructed and inspected at the binary level:
+- [04. Wireshark and Network Forensics Deep Dive ➡️](./04_Wireshark_and_Network_Forensics.md)

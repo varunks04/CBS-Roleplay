@@ -1,62 +1,71 @@
-# 03. False Positive Identification and Detection Tuning SOP
+# 03. False Positive Identification and Tuning SOP
 
-[⬅️ Prev: Incident Investigation](./02_End_to_End_Incident_Investigation_Workflow.md) | [Back to Workflows](./README.md) | [Next: Containment & Recovery ➡️](./04_Incident_Containment_Eradication_and_Recovery.md)
-
----
-
-### 1. Workflow Architecture Diagram
-
-```mermaid
-flowchart TD
-    A["1. Trigger: High volume of identical alerts firing with zero malicious activity"] --> B["2. Analyst analyzes recurring pattern (e.g., Backup script spawning PowerShell)"]
-    B --> C["3. Verify Legitimacy with System Owner & Inspect Script Code"]
-    C --> D{"Is Activity Verified Legitimate & Authorized?"}
-    D -->|No: Shadow IT / Malicious| E["Treat as Incident / Enforce Policy"]
-    D -->|Yes: Legitimate Business Need| F["4. Formulate Detection Tuning Strategy (Do NOT simply disable rule!)"]
-    F --> G["5. Implement Tight Whitelist Filter (Host + Path + Command Line Hash)"]
-    G --> H["6. Peer Review & Staging Test in SIEM"]
-    H --> I["7. Commit Rule Modification & Update Detection Documentation"]
-```
+[⬅️ Prev: End-to-End Investigation](./02_End_to_End_Incident_Investigation_Workflow.md) | [Back to Workflows](./README.md) | [Next: Incident Containment and Recovery ➡️](./04_Incident_Containment_Eradication_and_Recovery.md)
 
 ---
 
-### 2. Standard 8-Point Operational Breakdown
+### 🎓 Beginner's Compass: Decoded Acronyms & Terms
+- **False Positive (FP)**: A security alert that fires on completely benign, authorized business activity (e.g., an internal vulnerability scanner triggering an intrusion alarm).
+- **Rule Tuning**: Updating a SIEM correlation query or EDR policy with specific exceptions so that harmless business activity does not trigger alerts in the future.
+- **Detection Engineer**: The security engineer whose job is writing, optimizing, and maintaining SIEM and EDR detection rules.
+
+---
+
+### 1. Plain-English Walkthrough: Fixing the Over-Sensitive Smoke Alarm
+
+Imagine a smoke detector mounted directly above a kitchen stove that goes off every single time you boil water:
+- If it beeps 20 times a day, people get annoyed and eventually remove the batteries.
+- Then, when a real fire breaks out, nobody hears an alarm!
+- **Tuning** means adjusting the sensor: *"Sound the alarm if temperature exceeds 150°F, but ignore light steam from boiling pasta."*
+- In the SOC, tuning ensures analysts only wake up for real cyber threats.
+
+---
+
+### 2. The 8-Point Operational SOP
 
 #### 1. Trigger
-- An analyst identifies that a specific SIEM or EDR rule has a False Positive (FP) rate exceeding 40%, generating repetitive alert fatigue.
+An analyst investigates an alert and proves beyond doubt that the activity was benign business operations.
 
-#### 2. Responsible Parties (RACI Matrix)
-- **Accountable**: SOC Detection Engineering Lead.
-- **Responsible**: SOC Tier 2 Analyst / Detection Engineer.
-- **Consulted**: Application / System Owner running the benign tool.
-- **Informed**: Tier 1 Analysts (relieved of noisy alerts).
+#### 2. Responsible Parties (RACI)
+* **Responsible (R)**: Tier 1 / Tier 2 Analyst (identifies and documents the FP).
+* **Accountable (A)**: Detection Engineer (reviews and pushes rule modifications).
+* **Consulted (C)**: Application Owner / IT SysAdmin who ran the script.
+* **Informed (I)**: SOC Manager.
 
-#### 3. Required Tools & Information
-- **Tools**: SIEM Rule Editor, Git repository (Detection-as-Code / Sigma rules), EDR Console.
-- **Inputs**: Alert Rule ID, Alerting Query, False Positive Event Samples, Justification from system owner.
+#### 3. Required Tools & Inputs
+* **SIEM Rule Repository**: Git repository or Sentinel Analytic Rules portal.
+* **Change Management System**: ServiceNow Change Request ticket.
 
-#### 4. Step-by-Step Execution Procedure
-1. **Data Sampling**: Collect at least 20 instances of the false positive alert across different dates and hosts.
-2. **Identification of Benign Invariants**:
-   - Determine what unique attributes identify this as legitimate business activity (e.g., Process is signed by Microsoft, executes from a protected path `C:\Program Files\EnterpriseBackup\`, runs under a dedicated service account `svc-backup`).
-3. **Formulate Whitelist Logic (Avoid Overly Broad Exceptions!)**:
-   - ❌ **BAD EXCLUSION**: `where CommandLine contains "powershell.exe"` (Completely blinds the rule to real attacks!).
-   - ✅ **GOOD EXCLUSION**: `where ParentProcessName =~ "backup.exe" and AccountName =~ "svc-backup" and CommandLine contains "-MaintenanceJob"`
-4. **Staging & Historical Testing**:
-   - Test the modified query against the past 30 days of data in the SIEM to ensure it eliminates the benign noise while still triggering on simulated malicious samples.
-5. **Peer Review & Deployment**:
-   - Submit a Pull Request (PR) in the detection engineering Git repository.
-   - Deploy the updated rule to production Sentinel/Splunk.
+#### 4. Step-by-Step Procedure
+1. **Gather Proof of Legitimacy**:
+   * Verify with the user or system administrator: Did they run this command? For what business reason?
+   * Cross-reference against approved change requests (e.g., `CHG-90482`).
+   * Verify the digital signature of the software binary.
+2. **Draft the Exception Logic**:
+   * **BAD Exception**: `where ProcessCommandLine !contains "powershell.exe"` (Too broad! Attackers will use PowerShell to bypass your rule!).
+   * **GOOD Granular Exception**:
+     ```kusto
+     | where not (InitiatingProcessFileName == "BackupAgent.exe" 
+                  and ProcessCommandLine has "backup_script.ps1" 
+                  and AccountName == "svc-backup")
+     ```
+3. **Submit Tuning Request**: Open a detection tuning ticket for the Detection Engineering team with proposed logic.
 
-#### 5. Decision Points & Logic Gates
-- **IF** an application owner asks to exclude an entire folder (e.g., exclude `C:\Temp\`), **THEN** REJECT the request. Attackers frequently place malware in unmonitored excluded folders.
-- **IF** the vendor executable is unsigned and unverified, **THEN** require an official statement and file hash from the software vendor.
+#### 5. Decisions & Logic Gates
+* **IF** the activity occurs daily across 1,000 laptops -> **Tune the rule at the SIEM query level**.
+* **IF** the activity was a one-time scheduled maintenance event -> **Close ticket as Benign True Positive without rule modification**.
 
 #### 6. Escalation Matrix
-- **Disagreement with System Owner**: Escalate to SOC Manager and IT Architecture Review Board.
+* Detection engineers must review and deploy approved tuning changes within **48 hours**.
 
 #### 7. Expected Outcome
-- Elimination of repetitive alert noise without reducing defensive visibility, saving analyst triage hours and preventing critical alert fatigue.
+The alert stops firing on benign activity, lowering queue noise without introducing security blind spots.
 
-#### 8. Documentation & Audit Evidence
-- Git commit diff showing old rule vs new rule, testing results on 30-day historical data, and change ticket number.
+#### 8. Documentation & Evidence Recorded
+Save the user email confirmation, change management ticket number, and before/after KQL query diff.
+
+---
+
+### 3. Recommended Next Steps
+Learn the step-by-step procedure for neutralizing confirmed threats:
+- [04. Incident Containment, Eradication, and Recovery SOP ➡️](./04_Incident_Containment_Eradication_and_Recovery.md)

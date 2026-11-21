@@ -1,41 +1,48 @@
-# Case Study 03: Ransomware Deployment Attempt (LockBit Playbook)
+# 03. Scenario: Ransomware Deployment Attempt
 
-[⬅️ Prev: Impossible Travel](./02_Scenario_Suspicious_Impossible_Travel_Login.md) | [Back to Scenarios](./README.md) | [Next: Pass-the-Hash ➡️](./04_Scenario_Internal_Brute_Force_and_Pass_The_Hash.md)
+[⬅️ Prev: Impossible Travel Login](./02_Scenario_Suspicious_Impossible_Travel_Login.md) | [Back to Scenarios](./README.md) | [Next: Internal Pass-The-Hash ➡️](./04_Scenario_Internal_Brute_Force_and_Pass_The_Hash.md)
 
 ---
 
-### 1. Alert Context & Attack Chain
-At 02:22 AM on Saturday, the EDR console triggers a Critical Incident:
-`Inhibit System Recovery: Volume Shadow Copy Deletion attempt on Core File Server FS-CORP-01`
+### 🚨 The Incident Briefing
+* **Timestamp**: Saturday, 02:45:00 UTC
+* **Affected Asset**: `SRV-FILE-01` (Enterprise File Server holding 40TB of company data)
+* **Initial Alert**: CrowdStrike Falcon Alert: *"High-Confidence Ransomware Staging Behavior - Volume Shadow Copy Deletion Detected"* (Severity: **P1 - CRITICAL**)
+
+---
+
+### 1. Step-by-Step Investigation Walkthrough
+
+#### Step 1: Immediate Emergency Escalation
+This is a **P1 Critical Emergency**. The L1 analyst instantly joins the emergency bridge line, alerts the on-duty Incident Commander, and verifies host isolation.
+
+#### Step 2: Analyze the EDR Detection Chain
+The EDR command-line history displays the classic pre-encryption staging sequence:
 
 ```mermaid
 flowchart TD
-    A["1. Attacker establishes remote shell via compromised VPN credential"] --> B["2. Inhibit System Recovery (T1490)<br>'vssadmin.exe delete shadows /all /quiet'"]
-    B --> C["3. Disable Windows Defender (T1562.001)<br>'Set-MpPreference -DisableRealtimeMonitoring $true'"]
-    C --> D["4. Terminate Critical Database & Backup Processes<br>'net stop MSSQLSERVER /y'"]
-    D --> E["5. Execute High-Speed Multi-Threaded Encryptor<br>'lockbit.exe -path \corp-shares'"]
-    E --> F["6. Drop Ransom Note: README_TO_RESTORE.txt"]
+    Cmd1["1. vssadmin.exe delete shadows /all /quiet<br/>(Destroys Windows backup restore points)"] --> Cmd2["2. bcdedit.exe /set {default} recoveryenabled No<br/>(Disables Windows automatic boot recovery)"]
+    Cmd2 --> Cmd3["3. wbadmin.exe delete catalog -quiet<br/>(Erases Windows backup catalog)"]
+    Cmd3 --> Cmd4["4. net.exe stop 'MSSQLSERVER' /y<br/>(Stops databases so database files can be encrypted)"]
+    Cmd4 --> Cmd5["5. locker.exe -p C:\SharedData\ -k 256<br/>(Begins AES-256 multi-threaded file encryption)"]
 ```
 
----
-
-### 2. High-Fidelity Forensic Indicators (IOCs)
-
-| Technique | Command Line Observed | MITRE ATT&CK Mapping |
-| :--- | :--- | :--- |
-| **Shadow Copy Deletion** | `vssadmin.exe delete shadows /all /quiet` | T1490 (Inhibit System Recovery) |
-| **BCD Boot Tampering** | `bcdedit /set {default} bootstatuspolicy ignoreallfailures` | T1490 (Inhibit System Recovery) |
-| **Disabling Security** | `powershell.exe Set-MpPreference -DisableRealtimeMonitoring $true` | T1562.001 (Impair Defenses) |
-| **Stopping Services** | `net stop VeeamBackupSvc /y` | T1489 (Service Stop) |
+#### Step 3: Identify the Threat Actor Family
+The extension `.blackcat` is appended to 12 files before EDR intervention. A text file appears in `C:\`: `README_RESTORE_BLACKCAT.txt`.  
+**Threat Actor Identified**: **ALPHV / BlackCat Ransomware**.
 
 ---
 
-### 3. Immediate 15-Minute Containment Playbook
+### 2. Immediate Containment Actions Taken
 
-1. **Instant Network Isolation**: Click **Isolate Host** in EDR console within 60 seconds of alert generation.
-2. **Process Tree Termination**: EDR agent terminates the parent process spawning `vssadmin`.
-3. **Verify Backup Storage Immutability**:
-   - Check the offline / air-gapped backup repository (Veeam Hardened Repository / AWS S3 Object Lock with WORM - Write Once Read Many).
-   - Ensure the ransomware was unable to delete or encrypt immutable backup snapshots.
-4. **Subnet-Wide Containment**:
-   - Push emergency firewall rule temporarily blocking internal SMB (TCP 445) across server subnets to prevent lateral encryption spreading.
+1. **Automated EDR Network Quarantine**: CrowdStrike sensor terminates the `locker.exe` process tree and places `SRV-FILE-01` into Network Containment within **4 seconds** of the `vssadmin` command.
+2. **Disable Compromised Service Account**: The attacker executed the commands using compromised service account `svc-filesync`. The account is immediately disabled across Active Directory.
+3. **Sever Network Shares**: File share ports (SMB 445) are administratively disabled on internal switch VLANs to prevent lateral propagation.
+
+---
+
+### 3. Recovery and Lessons Learned
+* **Impact**: Only 12 non-critical files were encrypted before automated EDR containment halted the attack.
+* **Recovery**: The 12 encrypted files are restored from **air-gapped, immutable offline backups** taken at midnight.
+* **Root Cause**: The service account `svc-filesync` had excessive local administrator rights and used a weak 10-character password.
+* **Remediation**: Migrate all service accounts to **Group Managed Service Accounts (gMSA)** with 128-character auto-rotated passwords.

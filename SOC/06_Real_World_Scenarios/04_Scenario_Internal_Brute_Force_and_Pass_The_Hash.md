@@ -1,60 +1,65 @@
-# Case Study 04: Internal Brute-Force and Pass-the-Hash Lateral Movement
+# 04. Scenario: Internal Brute Force and Pass-The-Hash
 
-[⬅️ Prev: Ransomware Attempt](./03_Scenario_Ransomware_Deployment_Attempt.md) | [Back to Scenarios](./README.md) | [Next: DNS Exfiltration ➡️](./05_Scenario_DNS_Exfiltration_and_Beaconing.md)
-
----
-
-### 1. Alert Context & Initial Detection
-At 03:14 AM on a Sunday, the SIEM triggers a High-Severity incident:
-`Mass Windows Logon Failures followed by Successful NTLM Authentication across Multiple Internal Servers`
-- **Source Host**: `WS-HR-104` (Internal IP: `10.10.4.52`)
-- **Target Hosts**: 45 internal servers across subnet `10.10.10.0/24`
-- **Event ID**: 4,200 instances of Event ID 4625 within 4 minutes, followed by successful Event ID 4624 (Logon Type 3: Network) on `FILESRV-01` and `SQLPROD-02`.
+[⬅️ Prev: Ransomware Deployment](./03_Scenario_Ransomware_Deployment_Attempt.md) | [Back to Scenarios](./README.md) | [Next: DNS Data Exfiltration ➡️](./05_Scenario_DNS_Exfiltration_and_Beaconing.md)
 
 ---
 
-### 2. Technical Mechanism: Pass-the-Hash (MITRE ATT&CK T1550.002)
+### 🚨 The Incident Briefing
+* **Timestamp**: Thursday, 14:10:00 UTC
+* **Affected Asset**: `WKSTN-DEV-08` (Software Developer Machine)
+* **Initial Alert**: Splunk ES Notable: *"Excessive Internal SMB Connections & NTLM Pass-the-Hash Signature"* (Severity: **High**)
+
+---
+
+### 1. Step-by-Step Investigation Walkthrough
+
+#### Step 1: Query Internal Network Connections
+The analyst runs an SPL search to see which internal machines `WKSTN-DEV-08` is contacting:
+
+```spl
+index=network sourcetype=pan:traffic src_ip="10.10.5.8" dest_port=445
+| stats count by dest_ip, action
+| sort - count
+```
+
+**The Finding**: A single developer machine attempted SMB connections to **142 internal servers and workstations** in 10 minutes!
+
+#### Step 2: Inspect Endpoint LSASS Access
+Querying Sysmon logs for `WKSTN-DEV-08`:
+```spl
+index=windows EventCode=10 TargetImage="C:\\Windows\\System32\\lsass.exe"
+| table _time, SourceImage, GrantedAccess, CallTrace
+```
+* **Event Detected**: `SourceImage: C:\Users\Dev\AppData\Local\Temp\rundll.exe` requested access `0x1010` to `lsass.exe`.
+* **The Technique**: **`T1003.001 (OS Credential Dumping)`** using Mimikatz or ProcDump to steal the NTLM password hash of a visiting Domain Administrator!
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Attacker
-    participant WS as Compromised Workstation (WS-HR-104)
-    participant LSASS as lsass.exe Memory
-    participant Target as File Server (FILESRV-01)
+    actor Attacker as Attacker (Compromised Dev PC)
+    participant LSASS as lsass.exe (Memory)
+    participant DC as Domain Controller (DC01)
+    participant Target as File Server (FS02)
 
-    Attacker->>WS: 1. Achieves local admin execution
-    WS->>LSASS: 2. Dumps memory with Mimikatz: sekurlsa::logonpasswords
-    LSASS-->>WS: 3. Extracts NTLM Hash of Local Administrator (31d6cfe0d16ae931...)
-    Note over WS: Enterprise re-uses identical local admin password on all PCs!
-    WS->>Target: 4. SMB connection (TCP 445) presenting stolen NTLM Hash
-    Target->>Target: 5. Validates NTLM challenge against local SAM database
-    Target-->>WS: 6. Access Granted! Attacker is now Administrator on FILESRV-01!
+    Attacker->>LSASS: 1. Dumps memory of lsass.exe
+    LSASS-->>Attacker: 2. Extracts NTLM Hash of Domain Admin (admin_bob)
+    Note over Attacker: Attacker does NOT know Bob's real password!
+    Attacker->>Target: 3. Pass-the-Hash: Authenticates to FS02 using raw NTLM hash
+    Target->>DC: 4. Validates NTLM challenge
+    DC-->>Target: 5. Authentication Approved
+    Target-->>Attacker: 6. Opens Administrative Session (Lateral Movement Succeeded!)
 ```
 
 ---
 
-### 3. Forensic Investigation Queries
+### 2. Immediate Containment Actions Taken
 
-#### KQL Query in Microsoft Sentinel:
-```kql
-// Trace lateral movement logins originating from the compromised host
-SecurityEvent
-| where TimeGenerated > ago(6h)
-| where IpAddress == "10.10.4.52"
-| where EventID in (4624, 4625)
-| project TimeGenerated, Computer, TargetUserName, EventID, LogonType, AuthenticationPackageName
-| order by TimeGenerated asc
-```
+1. **Host Isolation**: Isolate `WKSTN-DEV-08` and `FS02` immediately.
+2. **Reset Tier-0 Domain Credentials**: The compromised administrator (`admin_bob`) has their Active Directory password reset twice, and the **`krbtgt` domain password is reset** to invalidate any forged Kerberos tickets.
+3. **Block NTLM**: Enable **Protected Users Security Group** in Active Directory, which disables NTLM authentication and forces Kerberos.
 
 ---
 
-### 4. Remediation and Enterprise Hardening
-
-1. **Immediate Host Isolation**: Isolate `WS-HR-104` via EDR to sever active lateral movement channels.
-2. **Deploy Microsoft LAPS (Local Administrator Password Solution)**:
-   - Eliminates static shared passwords.
-   - Automatically generates a unique, cryptographically random 24-character password for every machine's local administrator account.
-   - Rotates passwords automatically in Active Directory.
-3. **Restructure Firewall Network Segmentation**:
-   - Enforce host-based firewall rules blocking all inbound SMB (TCP 445) and RDP (TCP 3389) traffic **between workstations**. Workstations should never communicate directly with other workstations.
+### 3. Root Cause and Lessons Learned
+* **Root Cause**: A Domain Administrator logged into a standard workstation to troubleshoot a printer bug, leaving their high-privilege credentials cached in workstation RAM.
+* **Remediation**: Enforce **Tiered Administrative Architecture (Active Directory Red Forest / ESAE model)**: Tier-0 Domain Admins are strictly prohibited from logging into Tier-2 workstations.
